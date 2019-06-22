@@ -1,3 +1,5 @@
+---
+
 layout:     post
 title:      "code-spi"
 subtitle:   ""
@@ -6,7 +8,9 @@ author:     "刘念真"
 header-img: "img/post-bg-js-module.jpg"
 tags: form lofter
 
-* Read the fucking source code!
+---
+
+**Read the fucking source code!**
 
 可参考boardService内的FPGA相关驱动代码:
 struct spi_driver--->spi外设驱动,类似i2c_driver/platform_driver
