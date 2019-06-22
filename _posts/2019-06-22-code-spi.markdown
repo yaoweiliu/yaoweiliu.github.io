@@ -13,18 +13,18 @@ tags: form lofter
 **Read the fucking source code!**
 
 可参考boardService内的FPGA相关驱动代码:
-`struct spi_driver--->spi`外设驱动,类似`i2c_driver/platform_driver`
-`spi_register_driver()`--->注册
-`spi_unregister_driver()`--->注销
+`struct spi_driver--->spi`外设驱动,类似`i2c_driver/platform_driver`;
+`spi_register_driver()`--->注册;
+`spi_unregister_driver()`--->注销;
 
-`struct spi_device`--->`spi`外设,一般注册于板级信息内,个人猜测类似与`i2c_client`的生成过程,内核经`spi_board_info`生成`spi_device`(待核实)
+`struct spi_device`--->`spi`外设,一般注册于板级信息内,个人猜测类似与`i2c_client`的生成过程,内核经`spi_board_info`生成`spi_device`(待核实);
 
-`struct spi_transfer`--->读/写缓存
-`struct spi_message`--->交互的消息
-`spi_message_init()`--->初始化`spi_message`
-`spi_message_add_tail()`--->将`spi_transfer`加到`spi_message`的链表内
-`spi_sync()`--->同步传输消息
-`spi_async()`--->异步传输消息
+`struct spi_transfer`--->读/写缓存;
+`struct spi_message`--->交互的消息;
+`spi_message_init()`--->初始化`spi_message;`
+`spi_message_add_tail()`--->将`spi_transfer`加到`spi_message`的链表内;
+`spi_sync()`--->同步传输消息;
+`spi_async()`--->异步传输消息;
 
 `spi_message`的成员: 
 
