@@ -13,44 +13,50 @@ tags: form lofter
 **Read the fucking source code!**
 
 可参考boardService内的FPGA相关驱动代码:
-struct spi_driver--->spi外设驱动,类似i2c_driver/platform_driver
-spi_register_driver()--->注册
-spi_unregister_driver()--->注销
+`struct spi_driver--->spi`外设驱动,类似`i2c_driver/platform_driver`
+`spi_register_driver()`--->注册
+`spi_unregister_driver()`--->注销
 
-struct spi_device--->spi外设,一般注册于板级信息内,个人猜测类似与i2c_client的生成过程,内核经spi_board_info生成spi_device(待核实)
+`struct spi_device`--->`spi`外设,一般注册于板级信息内,个人猜测类似与`i2c_client`的生成过程,内核经`spi_board_info`生成`spi_device`(待核实)
 
-struct spi_transfer--->读/写缓存
-struct spi_message--->交互的消息
-spi_message_init()--->初始化spi_message
-spi_message_add_tail()--->将spi_transfer加到spi_message的链表内
-spi_sync()--->同步传输消息
-spi_async()--->异步传输消息
+`struct spi_transfer`--->读/写缓存
+`struct spi_message`--->交互的消息
+`spi_message_init()`--->初始化`spi_message`
+`spi_message_add_tail()`--->将`spi_transfer`加到`spi_message`的链表内
+`spi_sync()`--->同步传输消息
+`spi_async()`--->异步传输消息
 
-spi_message的成员: |---void (*complete)(void *context);|
-                                    |---void *context;                             |这两者用于消息异步传输完成时的callback函数;
+`spi_message`的成员: 
 
-spi_transfer的成员: |---const void *tx_buf;|
-                                   |---void *rx_buf;          |
-                                   |---unsigned len;         |
-                                   |---u8 bits_per_word;  |
-                                   |---u16 delay_usecs;   |
-                                   |---u32 speed_hz;       |这几个成员一般都要初始化,若要用到DMA相关的操作,则要初始化DMA相关信息
+| `void (*complete)(void *context)` |
+| :-------------------------------- |
+| `void *context`                   |
 
+这两者用于消息异步传输完成时的callback函数;
 
+`spi_transfer`的成员:
 
+| `const void *tx_buf` |
+| -------------------- |
+| `void *rx_buf`       |
+| `unsigned len`       |
+| `u8 bits_per_word`   |
+| `u16 delay_usecs`    |
+| `u32 speed_hz`       |
 
+这几个成员一般都要初始化,若要用到`DMA`相关的操作,则要初始化`DMA`相关信息
 
 **待补充**:
-spi控制器驱动，这种控制器驱动模型应该属于platform_driver，在probe函数内进行spi_master的添加和初始化操作。
-struct spi_master
+`spi`控制器驱动，这种控制器驱动模型应该属于`platform_driver`，在`probe`函数内进行`spi_master`的添加和初始化操作。
+`struct spi_master`
 
-spi_register_master()
+`spi_register_master()`
 
-spi_unregister_master()
+`spi_unregister_master()`
 
-spi_master_set_devdata()
+`spi_master_set_devdata()`
 
-spi_master_get_devdata()
+`spi_master_get_devdata()`
 
 
 
