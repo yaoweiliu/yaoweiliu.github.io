@@ -1,0 +1,14 @@
+---
+layout:     post
+title:      "hello"
+subtitle:   ""
+date:       2018-06-26 17:20:00
+author:     "刘念真"
+header-img: "img/post-think-try-write.jpg"
+tags:
+---
+
+今天终于搭建自己的博客，之前在网易的[lofter](http://www.lofter.com/blog/liunianzhen?act=dashboardclick_20130514_04)注册过一个账号，记录一些技术点滴，后来发现有的文章无缘无故被和谐了，为防止文章再次丢失，遂新搭建此博客。
+
+发表第一篇文章，以作纪念，后续把之前的文章也同步到该博客。
+
