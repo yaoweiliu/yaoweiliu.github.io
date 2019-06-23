@@ -1,7 +1,4 @@
 ```
-
-```
-
 layout:     post
 title:      "关于两个人的生活"
 subtitle:   ""
@@ -9,7 +6,5 @@ date:       2018-06-23 18:49:00
 author:     "刘念真"
 header-img: "img/post-bg-js-module.jpg"
 tags: 技术之外，生活之中
-
-```
 
 ```
