@@ -3,7 +3,7 @@
 layout:     post
 title:      "code-spi"
 subtitle:   ""
-date:       2018-06-22 17:41:00
+date:       2019-06-22 17:41:00
 author:     "刘念真"
 header-img: "img/post-bg-js-module.jpg"
 tags: Linux-spi
