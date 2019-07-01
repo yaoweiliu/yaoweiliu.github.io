@@ -10,5 +10,5 @@ tags: Linux-input
 
 Read the fucking source code!
 
-![input](D:\work-code\yaoweiliu.github.io\_posts\img\input.png)
+![input](img\input.png)
 
