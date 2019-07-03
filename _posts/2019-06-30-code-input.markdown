@@ -35,3 +35,4 @@ list_for_each_entry(handler, &input_handler_list, node)
 `input_get_drvdata()`从`struct device`的driver_data字段获取之前保存的设备结构体资源，一般在`remove`函数内完成。
 
 kernel内input设备采用分层的设计框架，一般的键盘、鼠标、LCD触摸屏等设备都属于input设备，当然也都是字符设备的范畴；其中的`file_operations`操作集的初始化在更底层的部分完成（这一部分抽象成公共的接口由kernel的input子系统来做），用户不用关心。可以阅读内核源码下的`drivers/input/evdev.c和drivers/input/input.c`。具体分析文章参见[input subsystem](https://www.cnblogs.com/lifexy/p/7542989.html)。
+
