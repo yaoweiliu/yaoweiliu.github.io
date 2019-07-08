@@ -12,7 +12,6 @@ tags: Linux-dts
 
 1. 可以找到自己板子对应的dts文件，添加相应的节点描述设备信息。
 2. 新建文件，如`demo.dtsi`，在该文件内添加节点来描述设备信息，之后在板子对应的dts文件的开始处添加`#include demo.dtsi`。
-3. 在设备驱动程序内注册`platform_driver`，通过`platform_driver.driver.of_match_table`的`compatible`来匹配调用`probe接口。
+3. 在设备驱动程序内注册`platform_driver`，通过`platform_driver.driver.of_match_table`的`compatible`来匹配调用`probe`接口。
 4. 待续......
-5. 参考连接[biscuitos-dts](https://biscuitos.github.io/blog/DTS-for_each_compatible_node/#源码分析)。
 
