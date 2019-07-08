@@ -14,7 +14,7 @@ tags: Linux-device_driver&device
 
 ![硬件拓扑](D:img\driver_model.gif)
 
-本文简要讲述下Linux内核中的设备模型，包括kobject、kset、ktype、bus、class、device、device driver等概念，**部分内容借鉴自蜗窝科技[wowo](<http://www.wowotech.net/device_model/13.html/comment-page-3#comments>)**。
+本文简要讲述下Linux内核中的设备模型，包括kobject、kset、ktype、bus、class、device、device driver等概念，**内容借鉴自蜗窝科技[wowo](<http://www.wowotech.net/device_model/13.html/comment-page-3#comments>)**。
 
 *A*. 基于上图的硬件拓扑先说device、device driver、bus、class比较上层一些的概念：
 
