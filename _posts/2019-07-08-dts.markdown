@@ -1,0 +1,16 @@
+---
+layout:     post
+title:      "dts"
+subtitle:   ""
+date:       2019-07-08 00:00:00
+author:     "刘念真"
+header-img: "img/post-bg-js-module.jpg"
+tags: Linux-dts
+---
+
+`Linux dts`学习，两种编辑方法：
+
+1. 可以找到自己板子对应的dts文件，添加相应的节点描述设备信息。
+2. 新建文件，如`demo.dtsi`，在该文件内添加节点来描述设备信息，之后在板子对应的dts文件的开始处添加`#include demo.dtsi`。
+3. 在设备驱动程序内注册`platform_driver`，通过`platform_driver.driver.of_match_table`的`compatible`来匹配调用`probe接口。
+4. 待续......
