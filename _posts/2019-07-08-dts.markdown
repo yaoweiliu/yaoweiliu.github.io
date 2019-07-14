@@ -11,7 +11,36 @@ tags: Linux-dts
 `Linux dts`学习，两种编辑方法：
 
 1. 可以找到自己板子对应的dts文件，添加相应的节点描述设备信息。
+
 2. 新建文件，如`demo.dtsi`，在该文件内添加节点来描述设备信息，之后在板子对应的dts文件的开始处添加`#include demo.dtsi`。
+
 3. 在设备驱动程序内注册`platform_driver`，通过`platform_driver.driver.of_match_table`的`compatible`来匹配调用`probe`接口。
-4. 各种`dts`接口的介绍及使用：......
+
+4. 各种`dts`接口的介绍及使用：
+
+   `const void *of_get_property(const struct device_node *np, const char *name, int *lenp)`：参数 np 指向一个` device node`；name 参数为需要查找属性的名字；lenp 参数用于存储属性的长度。函数通过调用 of_find_property() 函数获得属性的结构 property，如果获得成功，则返回属性的值；如果失败则返回 NULL。具体实现参见`drivers/of/base.c`文件。
+
+```
+   #define for_each_available_child_of_node(parent, child) \
+       for (child = of_get_next_available_child(parent, NULL); child != NULL; \
+            child = of_get_next_available_child(parent, child))
+   函数作用：用于遍历节点里的所有可用子节点（status属性值为“okay”）
+   参数parent指向当前节点；child指向子节点。
+   函数在for循环中，调用of_get_next_available_child(parent，NULL)函数获得
+   parent的第一个可用的子节点，只要child不为NULL，循环继续运行。函数继续调用
+   of_get_next_available_child(parent, child)函数获得child子节点的下一个可
+   用子节点，以此达到循环的效果。
+```
+
+```
+   #define for_each_child_of_node(parent, child) \
+       for (child = of_get_next_child(parent, NULL); child != NULL; \
+            child = of_get_next_child(parent, child))
+   函数作用：用于遍历节点里的所有子节点。
+   参数parent指向当前节点；child指向子节点，首次可置为NULL
+   函数在for循环中，调用of_get_next_child(parent，NULL)函数获得parent的第一
+   个子节点，只要child不为NULL，循环继续运行。函数继续调用
+   of_get_next_child(parent, child)函数获得child子节点的下一个子节点，以此达
+   到循环的效果。
+```
 
