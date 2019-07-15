@@ -18,7 +18,14 @@ tags: Linux-dts
 
 4. 各种`dts`接口的介绍及使用：
 
-   `const void *of_get_property(const struct device_node *np, const char *name, int *lenp)`：参数 np 指向一个` device node`；name 参数为需要查找属性的名字；lenp 参数用于存储属性的长度。函数通过调用 of_find_property() 函数获得属性的结构 property，如果获得成功，则返回属性的值；如果失败则返回 NULL。具体实现参见`drivers/of/base.c`文件。
+```
+   const void *of_get_property(const struct device_node *np, const
+   char *name, int *lenp)
+   参数 np 指向一个device node；name 参数为需要查找属性的名字；lenp 参数用于存
+   储属性的长度。函数通过调用 of_find_property() 函数获得属性的结构 property，
+   如果获得成功，则返回属性的值；如果失败则返回 NULL。具体实现参见
+   drivers/of/base.c文件。
+```
 
 ```
    #define for_each_available_child_of_node(parent, child) \
@@ -44,3 +51,15 @@ tags: Linux-dts
    到循环的效果。
 ```
 
+```
+   #define for_each_compatible_node(dn, type, compatible) \
+       for (dn = of_find_compatible_node(NULL, type, compatible); dn; \
+            dn = of_find_compatible_node(dn, type, compatible))
+   函数作用：通过 compatible 属性找到所有对应的 device node。
+   参数dn指向device_node;参数type指向属性类型;compatible指向compatible属性名
+   字。
+   函数首先调用of_find_compatble_node(NULL,type,compatible)函数获得第一个
+   compatible属性名字是compatible的节点，然后for循环中，只要dn节点不为空，那么
+   循环继续。循环完一次之后，再调用of_find_compatible_node()函数获得下一个满足
+   要求的节点。
+```
