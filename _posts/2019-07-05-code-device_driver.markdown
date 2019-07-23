@@ -40,7 +40,7 @@ tags: Linux-device_driver&device
    这时Ktype就派上用场了。我们知道，Ktype中的release回调函数负责释放Kobject（甚至是包含Kobject的数据结构）的内存空间，那么Ktype及其内部函数，是由谁实现呢？是由上层数据结构所在的模块！因为只有它，才清楚Kobject嵌在哪个数据结构中，并通过Kobject指针以及自身的数据结构类型，找到需要释放的上层数据结构的指针，然后释放它。 
    讲到这里，就清晰多了。所以，每一个内嵌Kobject的数据结构，例如kset、device、device_driver等等，都要实现一个Ktype，并定义其中的回调函数。同理，sysfs相关的操作也一样，必须经过ktype的中转，因为sysfs看到的是Kobject，而真正的文件操作的主体，是内嵌Kobject的上层数据结构！ 
    顺便提一下，Kobject是面向对象的思想在Linux kernel中的极致体现，但C语言的优势却不在这里，所以Linux kernel需要用比较巧妙（也很啰嗦）的手段去实现。------引用自[蜗窝科技](http://www.wowotech.net/device_model/kobject.html)
-   参考内核：`drivers/base/bus.c`、`include/linux/kobject.h`、`lib/kobject.c`
+参考内核：`drivers/base/bus.c`、`include/linux/kobject.h`、`lib/kobject.c`
 
 *C*. 
 
