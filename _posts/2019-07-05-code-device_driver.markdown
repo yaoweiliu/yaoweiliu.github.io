@@ -28,17 +28,19 @@ tags: Linux-device_driver&device
 *B*. Kobject & kset & ktype
 
 1. Kobject是基本数据类型，每个Kobject都会在"/sys/“文件系统中以目录的形式出现。
-
 2. Ktype代表Kobject（严格地讲，是包含了Kobject的数据结构）的属性操作集合（由于通用性，多个Kobject可能共用同一个属性操作集，因此把Ktype独立出来了）；**可以通过Ktype的release字段可以将包含该种类型kobject的数据结构的内存空间释放掉**。
-
 3. Kset是一个特殊的Kobject（因此它也会在"/sys/“文件系统中以目录的形式出现），它用来集合相似的Kobject（这些Kobject可以是相同属性的，也可以不同属性的）。
-
-4. **总结，Ktype以及整个Kobject机制的理解:** 
+4. Kobject的分配和释放：
+   a. kmalloc动态分配接口：`kobject_init_and_add()`，这种方式分配的kobject，会在引用计数变为0时，由kobject_put调用其ktype的release接口，释放内存空间，具体可参考后面有关kobject_put的讲解。
+   b. 由Kobject模块分配：`kobject_create_and_add()`，使用kobject_create自行分配空间，并内置了一个ktype（dynamic_kobj_ktype），用于在计数为0是释放空间。
+   c. 通过kobject_get和kobject_put可以修改kobject的引用计数，并在计数为0时，调用ktype的release接口，释放占用空间。
+5. 总结，Ktype以及整个Kobject机制的理解:
    Kobject的核心功能是：保持一个引用计数，当该计数减为0时，自动释放（由本文所讲的kobject模块负责） Kobject所占用的meomry空间。这就决定了Kobject必须是动态分配的（只有这样才能动态释放）。 
    而Kobject大多数的使用场景，是内嵌在大型的数据结构中（如Kset、device_driver等），因此这些大型的数据结构，也必须是动态分配、动态释放的。那么释放的时机是什么呢？是内嵌的Kobject释放时。但是Kobject的释放是由Kobject模块自动完成的（在引用计数为0时），那么怎么一并释放包含自己的大型数据结构呢？ 
    这时Ktype就派上用场了。我们知道，Ktype中的release回调函数负责释放Kobject（甚至是包含Kobject的数据结构）的内存空间，那么Ktype及其内部函数，是由谁实现呢？是由上层数据结构所在的模块！因为只有它，才清楚Kobject嵌在哪个数据结构中，并通过Kobject指针以及自身的数据结构类型，找到需要释放的上层数据结构的指针，然后释放它。 
    讲到这里，就清晰多了。所以，每一个内嵌Kobject的数据结构，例如kset、device、device_driver等等，都要实现一个Ktype，并定义其中的回调函数。同理，sysfs相关的操作也一样，必须经过ktype的中转，因为sysfs看到的是Kobject，而真正的文件操作的主体，是内嵌Kobject的上层数据结构！ 
    顺便提一下，Kobject是面向对象的思想在Linux kernel中的极致体现，但C语言的优势却不在这里，所以Linux kernel需要用比较巧妙（也很啰嗦）的手段去实现。------引用自[蜗窝科技](http://www.wowotech.net/device_model/kobject.html)
-
    参考内核：`drivers/base/bus.c`、`include/linux/kobject.h`、`lib/kobject.c`
+
+*C*. 
 
