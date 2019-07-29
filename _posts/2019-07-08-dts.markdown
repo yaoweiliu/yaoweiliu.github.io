@@ -18,7 +18,7 @@ tags: Linux-dts
 
 4. 各种`dts`接口的介绍及使用：
 
-```
+```c
    const void *of_get_property(const struct device_node *np, const
    char *name, int *lenp)
    参数 np 指向一个device node；name 参数为需要查找属性的名字；lenp 参数用于存
@@ -39,7 +39,7 @@ tags: Linux-dts
    用子节点，以此达到循环的效果。
 ```
 
-```
+```c
    #define for_each_child_of_node(parent, child) \
        for (child = of_get_next_child(parent, NULL); child != NULL; \
             child = of_get_next_child(parent, child))
@@ -51,7 +51,7 @@ tags: Linux-dts
    到循环的效果。
 ```
 
-```
+```c
    #define for_each_compatible_node(dn, type, compatible) \
        for (dn = of_find_compatible_node(NULL, type, compatible); dn; \
             dn = of_find_compatible_node(dn, type, compatible))
@@ -63,3 +63,25 @@ tags: Linux-dts
    循环继续。循环完一次之后，再调用of_find_compatible_node()函数获得下一个满足
    要求的节点。
 ```
+
+```c
+   #define for_each_matching_node(dn, matches) \
+       for (dn = of_find_matching_node(NULL, matches); dn; \
+            dn = of_find_matching_node(dn, matches))
+   函数作用：通过 device_id 列表遍历所有的 device node。
+   dn 指向 device node; matches 指向已知的device id list。
+   函数首先调用 of_find_matching_node(NULL, matches) 函数获得 device_id
+   list的第一个device node，存储在 dn 参数里。只要dn不为NULL，则for循环继续。
+   使用 of_find_matching_node(dn, matches) 函数获得下一个device id list
+   的下一个 device node。
+   
+   static inline struct device_node *of_find_matching_node(struct 
+   device_node *from, const struct of_device_id *matches)
+   {
+      return of_find_matching_node_and_match(from, matches, NULL);
+   }
+   参数from指向开始查找的device node；matches指向一个已知的device_id列表。
+   函数直接调用 of_find_matching_node_and_match() 函数获得 device_id 对应
+   的节点。
+```
+
