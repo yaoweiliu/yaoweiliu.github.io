@@ -85,6 +85,17 @@ tags: Linux-dts
    的节点。
 ```
 
+```c
+   int of_property_read_u32_array(const struct device_node *np, const
+   char *propname, u32 *out_values, size_t sz)
+   函数作用：读取节点中的32位整形数组的值。
+   参数 np 指向当前节点；propbane 参数指向属性的名字；out_values 参数用于存储整
+   形数组的指针；sz 参数用于执行需要读取32位整形的数量。
+   函数首先调用 of_find_property_value_of_size() 函数获得属性对应的属性值。然
+   后进行判断之后，将每个属性值存储到out_values中。
+   成功返回0，反之返回错误码。
+```
+
 **注意点**：1. 如果属性值的类型是` u32`，那么其值以大端模式表示，高字节在低地址存放。
 
 2. #address-cells表示用几个cell表示地址，#size-cells表示用几个cell表示地址长度，比如：
