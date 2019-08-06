@@ -42,5 +42,5 @@ tags: Linux-device_driver&device
    顺便提一下，Kobject是面向对象的思想在Linux kernel中的极致体现，但C语言的优势却不在这里，所以Linux kernel需要用比较巧妙（也很啰嗦）的手段去实现。------引用自[蜗窝科技](http://www.wowotech.net/device_model/kobject.html)
 参考内核：`drivers/base/bus.c`、`include/linux/kobject.h`、`lib/kobject.c`
 
-*C*. 
+*C*. sysfs
 
