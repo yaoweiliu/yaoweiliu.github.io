@@ -44,3 +44,24 @@ tags: Linux-device_driver&device
 
 *C*. sysfs
 
+1. kobject和kset在/sys/下的表现形式都是目录，目录名分别是两个结构体的name字段。
+2. 驱动中使用sysfs：
+   a)定义：使用DEVICE_ATTR(_name, _mode, _show, _store)定义一个名字为dev_attr_##_name的struct device_attribute变量，_mode可以使只写0444或者只读0222或者读写0666，_show为cat该文件时的回调函数，_store为echo该文件时的回调函数。
+   b)创建文件：device_create_file()函数利用该对象(dev_attr_##_name)在device下创建文件。
+   c)示例：https://github.com/yaoweiliu/work/blob/master/device_attr/device_attr.c
+   d)基于low level的attribute请参考源码(include/linux/sysfs.h)，还没理解明白。
+
+*D*. device&device_driver
+
+1. device_driver的作用：获得与相应的硬件进行信息交互的能力，也即驱动硬件正常工作(时序等等因素)。
+   **platform_driver中的suspend/resume/shutdown接口分别在系统挂起/唤醒/关机时被调用，probe/remove接口分别在设备和设备驱动匹配/移除时调用！**
+
+*E*. bus&class
+
+1. 
+
+*F*. device resource management
+
+1. 源码位置：driver/base/devres.c
+2. 作用：
+3. 接口：devm_xxx()
