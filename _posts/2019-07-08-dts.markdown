@@ -13,7 +13,7 @@ tags: Linux-dts
 1. 可以找到自己板子对应的dts文件，添加相应的节点描述设备信息。
 2. 新建文件，如`demo.dtsi`，在该文件内添加节点来描述设备信息，之后在板子对应的dts文件的开始处添加`#include demo.dtsi`。
 3. 在设备驱动程序内注册`platform_driver`，通过`platform_driver.driver.of_match_table`的`compatible`来匹配调用`probe`接口。
-4. 补充3中的内容：首先判断一个节点(device)从属于哪种总线(bus)，如果从属于spi_bus_type，就需要注册spi_driver而不是platform_driver，i2c同理；但是如果一个节点是根节点(/)的直接子节点，一般就需要注册platform_driver；定义一个of_match_table的数组变量，并赋值给spi_driver.driver.of_match_table。[spi_driver可以是其他high level的driver，如i2c_driver、pci_driver等]。
+4. 补充3中的内容：首先判断一个节点(device)从属于哪种总线(bus)，如果从属于spi_bus_type，就需要注册spi_driver而不是platform_driver，i2c同理；但是如果一个节点是根节点(/)的直接子节点，一般就需要注册platform_driver，一般根节点(/)的第一级子节点都是各种控制器设备，所以这些节点属于platform_device；定义一个of_match_table的数组变量，并赋值给spi_driver.driver.of_match_table。[spi_driver可以是其他high level的driver，如i2c_driver、pci_driver等]。
 5. 要注释掉一个节点：添加属性`status = "disabled";`即可。可以用`platform_get_resource()`获得`reg`属性的值。
 6. 各种`dts`接口的介绍及使用：
 
@@ -107,7 +107,8 @@ tags: Linux-dts
 
 **注意点**：1. 如果属性值的类型是` u32`，那么其值以大端模式表示，高字节在低地址存放。
 
-2. #address-cells表示用几个cell表示地址，#size-cells表示用几个cell表示地址长度，比如：
+2. #address-cells表示用几个cell表示地址，#size-cells表示用几个cell表示地址长度，dts语法用#address-cells和#size-cells组织reg属性，之后通过reg属性构建IORESOURCE_MEM类型的资源供driver使用，比如：
+
    ```c
    Example1
    / {
@@ -176,4 +177,3 @@ tags: Linux-dts
        ...
    }
    ```
-   
