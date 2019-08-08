@@ -106,7 +106,6 @@ tags: Linux-dts
 ```
 
 **注意点**：1. 如果属性值的类型是` u32`，那么其值以大端模式表示，高字节在低地址存放。
-
 2. #address-cells表示用几个cell表示地址，#size-cells表示用几个cell表示地址长度，dts语法用#address-cells和#size-cells组织reg属性，之后通过reg属性构建IORESOURCE_MEM类型的资源供driver使用，比如：
 
    ```c
