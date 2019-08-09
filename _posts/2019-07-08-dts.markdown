@@ -28,13 +28,13 @@ tags: Linux-dts
    drivers/of/base.c文件。
 ```
 
-```
+```c
    #define for_each_available_child_of_node(parent, child) \
        for (child = of_get_next_available_child(parent, NULL); child != NULL; \
             child = of_get_next_available_child(parent, child))
    函数作用：用于遍历节点里的所有可用子节点（status属性值为“okay”）
    参数parent指向当前节点；child指向子节点。
-   函数在for循环中，调用of_get_next_available_child(parent，NULL)函数获得
+   函数在for循环中，调用 of_get_next_available_child(parent，NULL)函数获得
    parent的第一个可用的子节点，只要child不为NULL，循环继续运行。函数继续调用
    of_get_next_available_child(parent, child)函数获得child子节点的下一个可
    用子节点，以此达到循环的效果。
@@ -46,7 +46,7 @@ tags: Linux-dts
             child = of_get_next_child(parent, child))
    函数作用：用于遍历节点里的所有子节点。
    参数parent指向当前节点；child指向子节点，首次可置为NULL
-   函数在for循环中，调用of_get_next_child(parent，NULL)函数获得parent的第一
+   函数在for循环中，调用 of_get_next_child(parent，NULL)函数获得parent的第一
    个子节点，只要child不为NULL，循环继续运行。函数继续调用
    of_get_next_child(parent, child)函数获得child子节点的下一个子节点，以此达
    到循环的效果。
@@ -59,9 +59,9 @@ tags: Linux-dts
    函数作用：通过 compatible 属性找到所有对应的 device node。
    参数dn指向device_node;参数type指向属性类型;compatible指向compatible属性名
    字。
-   函数首先调用of_find_compatble_node(NULL,type,compatible)函数获得第一个
+   函数首先调用 of_find_compatble_node(NULL,type,compatible)函数获得第一个
    compatible属性名字是compatible的节点，然后for循环中，只要dn节点不为空，那么
-   循环继续。循环完一次之后，再调用of_find_compatible_node()函数获得下一个满足
+   循环继续。循环完一次之后，再调用 of_find_compatible_node()函数获得下一个满足
    要求的节点。
 ```
 
