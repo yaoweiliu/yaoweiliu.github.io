@@ -37,7 +37,8 @@ worker_pool有两种形式：1.normal worker_pool，给通用的workqueue使用�
 - worker_pool：工人的集合。worker_pool 和 worker 是一对多的关系。
 - pwq(pool_workqueue)：中间人 / 中介，负责建立起 workqueue 和 worker_pool 之间的关系。workqueue 和 pwq 是一对多的关系，pwq 和 worker_pool 是一对一的关系。
 
-work\workqueue\worker\worker_pool\pool_workqueue(pwq)的关系拓扑：workqueue内的work由worker_pool内的worker来处理，而worker对应于内核线程worker_thread()，并且worker_thread()由内核创建，用户不需关心。
+work\workqueue\worker\worker_pool\pool_workqueue(pwq)的关系拓扑：workqueue内的work由worker_pool内的worker来处理，而worker对应于内核线程worker_thread()，并且worker_thread()由内核创建，用户不需关心；
+*worker 处理 work：处理 work 的过程主要在 `worker_thread()` -> `process_one_work()` 中处理。*
 
 ![wq_normal_wq_topology](img\wq_normal_wq_topology.png)
 
