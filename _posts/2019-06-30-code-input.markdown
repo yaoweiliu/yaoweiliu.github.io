@@ -30,3 +30,5 @@ list_for_each_entry(handler, &input_handler_list, node)
 
 kernel内input设备采用分层的设计框架，一般的键盘、鼠标、LCD触摸屏等设备都属于input设备，当然也都是字符设备的范畴；其中的`file_operations`操作集的初始化在更底层的部分完成（这一部分抽象成公共的接口由kernel的input子系统来做），用户不用关心。可以阅读内核源码下的`drivers/input/evdev.c和drivers/input/input.c`。具体分析文章参见[input subsystem](https://www.cnblogs.com/lifexy/p/7542989.html)。
 
+一般常见的input设备都是都是i2c总线的触摸屏设备。
+

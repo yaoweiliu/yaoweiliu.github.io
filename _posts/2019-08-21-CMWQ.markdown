@@ -1,0 +1,66 @@
+---
+layout:     post
+title:      "code-workqueue"
+subtitle:   ""
+date:       2019-08-21 22:11:00
+author:     "刘念真"
+header-img: "img/post-bg-js-module.jpg"
+tags: CMWQ
+---
+
+**Read the fucking source code!**
+
+注：本文所涉及到的内核代码版本为linux-4.9.119。
+
+workqueue可以自己创建也可以使用系统内的全局workqueue，在system_workqueue的属性(不具有unbound等)不能满足自己的需求时，可以自己创建workqueue来处理work[这句话不太对，真正处理work的是worker，workqueue只是work的集合]。但是在自己创建workqueue时如果没有设置WQ_UNBOUND标志，创建出来的workqueue默认也是采用normal worker_pool中的worker来处理各个work的，此时与使用system_workqueue一样。所以不论是系统还是用户的 workqueue，如果没有指定 WQ_UNBOUND，默认都是和 normal worker_pool 绑定。[当使用create_singlethread_workqueue(name)宏函数创建自己的workqueue时，该宏函数调用的函数已默认添加WQ_UNBOUND标志，参考内核include/linux/workqueue.h]
+```c
+#define create_singlethread_workqueue(name)             \
+	alloc_ordered_workqueue("%s", __WQ_LEGACY | WQ_MEM_RECLAIM, name)
+
+#define alloc_ordered_workqueue(fmt, flags, args...)            \
+	alloc_workqueue(fmt, WQ_UNBOUND | __WQ_ORDERED |        \
+			__WQ_ORDERED_EXPLICIT | (flags), 1, ##args)
+```
+WQ_UNBOUND[WQ_UNBOUND  = 1 << 1]是一个workqueue flags，表示含义not bound to any cpu。For details, please refer to Documentation/workqueue.txt.
+
+系统的规划是每个 CPU 创建两个 normal worker_pool：一个 normal 优先级 (nice=0)、一个高优先级 (nice=HIGHPRI_NICE_LEVEL)，对应创建出来的 worker 的进程 nice 不一样。
+每个 worker 对应一个 `worker_thread()` 内核线程，一个 worker_pool 包含一个或者多个 worker，worker_pool 中 worker 的数量是根据 worker_pool 中 work 的负载来动态增减的。
+
+worker_pool有两种形式：1.normal worker_pool，给通用的workqueue使用，即system_workqueue；2.unbound worker_pool，给WQ_UNBOUND类型的workqueue使用。两者的区别是：normal worker_pool内的worker一般在指定的cpu上运行，不会跨cpu调度；而unbound worker_pool未绑定在指定cpu上，它绑定到node上，而一个node可能包含多个cpu，所以其中的worker可以在多个cpu之间调度，充分利用idle的cpu，提升效率。node--->NUMA[可以在了解下内核的NUMA概念]
+
+而unbound worker_pool又可以分为两类：1.unbound_std_wq，每个node对应一个worker_pool，多个node就对应多个worker_pool；2.ordered_wq，所有的node对应一个default worker_pool。
+
+概念部分：
+- work ：工作。
+- workqueue ：工作的集合。workqueue 和 work 是一对多的关系。
+- worker ：工人。在代码中 worker 对应一个 `work_thread()` 内核线程。
+- worker_pool：工人的集合。worker_pool 和 worker 是一对多的关系。
+- pwq(pool_workqueue)：中间人 / 中介，负责建立起 workqueue 和 worker_pool 之间的关系。workqueue 和 pwq 是一对多的关系，pwq 和 worker_pool 是一对一的关系。
+
+work\workqueue\worker\worker_pool\pool_workqueue(pwq)的关系拓扑：workqueue内的work由worker_pool内的worker来处理，而worker对应于内核线程worker_thread()，并且worker_thread()由内核创建，用户不需关心。
+
+![wq_normal_wq_topology](img\wq_normal_wq_topology.png)
+
+![wq_ordered_wq_topology](img\wq_ordered_wq_topology.png)
+
+![wq_unboundstd_wq_topology](img\wq_unboundstd_wq_topology.png)
+
+<u>CMWQ的精髓就在worker_pool里面worker的动态增减管理上manage_workers()。[idle running suspend]</u>：
+
+- worker_pool 中的 worker 有 3 种状态：idle、running、suspend；
+- 如果 worker_pool 中有 work 需要处理，保持至少一个 running worker 来处理；
+- running worker 在处理 work 的过程中进入了阻塞 suspend 状态，为了保持其他 work 的执行，需要唤醒新的 idle worker 来处理 work；
+- 如果有 work 需要执行且 running worker 大于 1 个，会让多余的 running worker 进入 idle 状态；
+- 如果没有 work 需要执行，会让所有 worker 进入 idle 状态；
+- 如果创建的 worker 过多，destroy_worker 在 300s(IDLE_WORKER_TIMEOUT) 时间内没有再次运行的 idle worker。
+
+![wq_worker_statusmachine](img\wq_worker_statusmachine.png)
+
+针对用户使用：
+1.system_wq:使用INIT_WORK()初始化work并绑定一个work处理函数(一般在模块加载函数内完成)；使用schedule_work()接口将新建的work压入到全局的系统工作队列中(一般在中断处理函数中调用此接口)；实现work的callback处理函数，也即中断下半部分。
+2.自己创建wq:使用create_workqueue()|create_singlethread_workqueue()等接口创建wq(一般在模块加载函数内完成)；使用INIT_WORK()初始化work并绑定一个work处理函数(一般在中断处理函数中调用此接口)；使用queue_work()接口将新建的work压入到自己创建的wq(一般在中断处理函数中调用此接口，配合queue_work()接口使用)；实现work的callback处理函数，也即中断下半部分。
+
+CMWQ的目标之一就是明确的划分了workqueue的前端接口和后端实现机制。也就是说，用户应该关注workqueue的前端的那些接口，自己创建workqueue、销毁workqueue、queue一个work等，而具体后端采用什么机制（例如是否两个workqueue共用同一个worker thread pool）应该是用户不可见的。因此，为何要使用自己创建的workqueue而不使用系统的workqueue呢？这和workqueue属性相关，也就是说你要创建怎样的workqueue（bound or unbound，normal or high priority等），如果你的workqueue没有什么特别的属性，那么使用系统缺省的那些就OK了，但是如果系统中缺省创建的workqueue所具备的属性不符合你的需求，那么你就需要自己创建workqueue。但是，无论如何，底层是什么的线程池来处理其实用户是不需要关系的，系统可以做好一切的。
+
+参考：[魅族内核团队](<http://kernel.meizu.com/linux-workqueue.html>)
+
