@@ -16,8 +16,9 @@ tags: Linux-dts
 4. 补充3中的内容：首先判断一个节点(device)从属于哪种总线(bus)，如果从属于spi_bus_type，就需要注册spi_driver而不是platform_driver，i2c同理；但是如果一个节点是根节点(/)的直接子节点，一般就需要注册platform_driver，一般根节点(/)的第一级子节点都是各种控制器设备，所以这些节点属于platform_device；定义一个of_match_table的数组变量，并赋值给spi_driver.driver.of_match_table。[spi_driver可以是其他high level的driver，如i2c_driver、pci_driver等]。
 5. 补充4中关于platform_device的填充：arch/arm/kernel/setup.c/customize_machine()/of_platform_populate()/of_platform_bus_create()；关于i2c_client的填充：of_i2c_register_devices()。
 6. 要注释掉一个节点：添加属性`status = "disabled";`即可。可以用`platform_get_resource()`获得`reg`属性的值。
-7. kernel解析dtb：init/main.c/start_kernel()/setup_arch()/setup_machine_fdt()/unflatten_device_tree()/early_init_dt_scan_nodes()等。参考kernel_src/Documentation/devicetree/usage-model.txt
-8. 各种`dts`接口的介绍及使用：
+7. uboot将dtb文件从flash拷贝到内存，之后将该内存的起始地址传递给kernel，在之后由kernel进行加载解析。
+8. kernel解析dtb：init/main.c/start_kernel()/setup_arch()/setup_machine_fdt()/unflatten_device_tree()/early_init_dt_scan_nodes()等。参考kernel_src/Documentation/devicetree/usage-model.txt
+9. 各种`dts`接口的介绍及使用：
 
 ```c
    const void *of_get_property(const struct device_node *np, const
