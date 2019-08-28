@@ -1,0 +1,101 @@
+---
+layout:     post
+title:      "code-i2c"
+subtitle:   ""
+date:       2019-08-27 21:38:00
+author:     "刘念真"
+header-img: "img/post-bg-js-module.jpg"
+tags: Linux-i2c
+---
+**Read the fucking source code!**
+
+在linux内核中，i2c子系统的结构分为3层：
+
+1. i2c核心：i2c-core
+
+2. i2c总线驱动
+
+3. i2c设备驱动
+
+其中1提供了与平台无关的通用层，比如：i2c_adapter/i2c_driver的注册、移除等操作；2是指i2c控制器驱动，i2c控制器一般集成在soc的内部，且一般以platform_device的形式存在，同时以platform_driver的形式加载到内核中（在platform_driver的probe字段内对adapter进行初始化和注册等操作），内核用struct i2c_adapter来抽象表示i2c控制器（master device）;3是指i2c从设备，内核用struct i2c_client来抽象表示i2c从设备（slave device），我们常说的i2c驱动多数情况都是指slave device，i2c设备驱动以struct i2c_driver的形式加载到内核中。
+
+其中每一个i2c_adapter都必须对应一个i2c_algorithm结构，没有i2c_algorithm的i2c_adapter就不能正常工作。
+
+struct i2c_algorithm：i2c设备间消息发送的方法由该结构体的字段实现。
+
+关键结构体[include/linux/i2c.h]：
+
+1. i2c_adapter: used to identify a physical i2c bus along with the access algorithms necessary to access it.
+
+```c
+struct i2c_adapter {
+	struct module *owner;
+	unsigned int class;		  /* classes to allow probing for */
+	const struct i2c_algorithm *algo; /* the algorithm to access the bus */
+	void *algo_data;
+
+	/* data fields that are valid for all devices	*/
+	const struct i2c_lock_operations *lock_ops;
+	struct rt_mutex bus_lock;
+	struct rt_mutex mux_lock;
+
+	int timeout;			/* in jiffies */
+	int retries;
+	struct device dev;		/* the adapter device */
+
+	int nr;
+	char name[48];
+	struct completion dev_released;
+
+	struct mutex userspace_clients_lock;
+	struct list_head userspace_clients;
+
+	struct i2c_bus_recovery_info *bus_recovery_info;
+	const struct i2c_adapter_quirks *quirks;
+};
+```
+
+algo字段：每一个i2c_adapter都有一个从属的i2c_algorithm结构，表明该adapter支持的数据传输算法。
+
+retries/timeout字段：在`__i2c_transfer()`函数内会进行重试次数的判断，代码如下[linux_src/driver/i2c/i2c-core.c]:
+
+```c
+for (ret = 0, try = 0; try <= adap->retries; try++) {
+		ret = adap->algo->master_xfer(adap, msgs, num);
+		if (ret != -EAGAIN)
+			break;
+		if (time_after(jiffies, orig_jiffies + adap->timeout))
+			break;
+}
+```
+
+有用的函数：`#define to_i2c_adapter(d) container_of(d, struct i2c_adapter, dev)`，多看看include/linux/i2c.h头文件，会有很多简单有效的接口。
+
+2. i2c_algorithm: represent I2C transfer method.
+
+```c
+struct i2c_algorithm {
+	/* If an adapter algorithm can't do I2C-level access, set master_xfer
+	   to NULL. If an adapter algorithm can do SMBus access, set
+	   smbus_xfer. If set to NULL, the SMBus protocol is simulated
+	   using common I2C messages */
+	/* master_xfer should return the number of messages successfully
+	   processed, or a negative value on error */
+	int (*master_xfer)(struct i2c_adapter *adap, struct i2c_msg *msgs,
+			   int num);
+	int (*smbus_xfer) (struct i2c_adapter *adap, u16 addr,
+			   unsigned short flags, char read_write,
+			   u8 command, int size, union i2c_smbus_data *data);
+
+	/* To determine what the adapter supports */
+	u32 (*functionality) (struct i2c_adapter *);
+
+#if IS_ENABLED(CONFIG_I2C_SLAVE)
+	int (*reg_slave)(struct i2c_client *client);
+	int (*unreg_slave)(struct i2c_client *client);
+#endif
+};
+```
+
+master_xfer字段：i2c msg主要的传输方法。
+
