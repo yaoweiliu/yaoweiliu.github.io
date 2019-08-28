@@ -9,7 +9,7 @@ tags: Linux-i2c
 ---
 **Read the fucking source code!**
 
-在linux内核中，i2c子系统的结构分为3层：
+A. 在linux内核中，i2c子系统的结构分为3层：
 
 1. i2c核心：i2c-core
 
@@ -23,7 +23,21 @@ tags: Linux-i2c
 
 struct i2c_algorithm：i2c设备间消息发送的方法由该结构体的字段实现。
 
-关键结构体[include/linux/i2c.h]：
+
+
+![i2c设备和i2c控制器硬件拓扑](img\i2c设备和i2c控制器硬件拓扑.png)
+
+
+
+![i2c框架在kernel内的软件拓扑](img\i2c框架在kernel内的软件拓扑.png)
+
+
+
+![i2c_framework_software_architecture](img\i2c_framework_software_architecture.png)
+
+
+
+B. 关键结构体[include/linux/i2c.h]：
 
 1. i2c_adapter: used to identify a physical i2c bus along with the access algorithms necessary to access it.
 
@@ -99,3 +113,156 @@ struct i2c_algorithm {
 
 master_xfer字段：i2c msg主要的传输方法。
 
+functionality字段：表示algorithm/adapter支持的i2c功能标志[I2C_FUNC_*]。
+
+正常来讲每一个i2c_adapter都会内嵌一个i2c_algorithm结构。
+
+3. i2c_driver: represent an I2C device driver，没有具体的物理设备抽象，主要完成i2c设备的功能。
+```c
+struct i2c_driver {
+	unsigned int class;
+
+	/* Notifies the driver that a new bus has appeared. You should avoid
+	 * using this, it will be removed in a near future.
+	 */
+	int (*attach_adapter)(struct i2c_adapter *) __deprecated;
+
+	/* Standard driver model interfaces */
+	int (*probe)(struct i2c_client *, const struct i2c_device_id *);
+	int (*remove)(struct i2c_client *);
+
+	/* driver model interfaces that don't relate to enumeration  */
+	void (*shutdown)(struct i2c_client *);
+
+	/* Alert callback, for example for the SMBus alert protocol.
+	 * The format and meaning of the data value depends on the protocol.
+	 * For the SMBus alert protocol, there is a single bit of data passed
+	 * as the alert response's low bit ("event flag").
+	 * For the SMBus Host Notify protocol, the data corresponds to the
+	 * 16-bit payload data reported by the slave device acting as master.
+	 */
+	void (*alert)(struct i2c_client *, enum i2c_alert_protocol protocol,
+		      unsigned int data);
+
+	/* a ioctl like command that can be used to perform specific functions
+	 * with the device.
+	 */
+	int (*command)(struct i2c_client *client, unsigned int cmd, void *arg);
+
+	struct device_driver driver;
+	const struct i2c_device_id *id_table;
+
+	/* Device detection callback for automatic device creation */
+	int (*detect)(struct i2c_client *, struct i2c_board_info *);
+	const unsigned short *address_list;
+	struct list_head clients;
+};
+```
+
+probe字段：探测到i2c_client时的回调函数，可以在probe内做初始化操作。
+
+remove字段：i2c_client移除时的回调函数，可以在remove内做反初始化操作。
+
+driver字段：继承的device_driver结构体，本质上属于设备模型。
+
+id_table字段：提供i2c_client和i2c_driver匹配的一种方式，其他的比如dts，acpi，driver的name字段，具体参看`drivers/base/platform.c/platform_match()`。
+
+有用的函数：`#define to_i2c_driver(d) container_of(d, struct i2c_driver, driver)`
+
+4. i2c_client: represent an I2C slave device.
+```c
+struct i2c_client {
+	unsigned short flags;		/* div., see below		*/
+	unsigned short addr;		/* chip address - NOTE: 7bit	*/
+					/* addresses are stored in the	*/
+					/* _LOWER_ 7 bits		*/
+	char name[I2C_NAME_SIZE];
+	struct i2c_adapter *adapter;	/* the adapter we sit on	*/
+	struct device dev;		/* the device structure		*/
+	int irq;			/* irq issued by device		*/
+	struct list_head detected;
+#if IS_ENABLED(CONFIG_I2C_SLAVE)
+	i2c_slave_cb_t slave_cb;	/* callback for slave mode	*/
+#endif
+};
+```
+
+adapter字段：表示该i2c_client从属的adapter设备。
+
+dev字段：继承的device结构体，本质上属于设备模型。
+
+flags/addr/name/irq字段：由struct i2c_board_info负责填充；这里先讲一下i2c_client的产生过程：
+远古时代，一般由驱动程序编写者在板级文件(board-xxx.c)中定义一个struct i2c_board_info类型的list，list元素都是I2C_BOARD_INFO(name, address)，比如
+```c
+static struct i2c_board_info touchscreen_i2c_boardinfo[] = {
+#if defined(BOARD_CTBOX) 
+	{I2C_BOARD_INFO("Goodix-TS", 0x14)},
+#endif
+#if defined(BOARD_DISPLAY)
+	{I2C_BOARD_INFO("ilitek_i2c", 0x41), .irq = 263},
+#endif
+};
+```
+以这样的形式构建i2c slave device的信息，之后内核会根据i2c_board_info类型的list信息，在合适的时候调用`struct i2c_client *i2c_new_device(struct i2c_adapter *adap, struct i2c_board_info const *info)`接口创建i2c_client；新时代都在dts中以节点的形式构建i2c slave device信息，在adapter的probe过程中，会调用of_i2c_register_devices()函数遍历控制器下挂的i2c设备的DTS节点，并将其注册成i2c_client。
+
+5. i2c_board_info: template for device creation, i2c_board_info is used to build tables of information listing I2C devices.
+```c
+struct i2c_board_info {
+	char		type[I2C_NAME_SIZE];
+	unsigned short	flags;
+	unsigned short	addr;
+	void		*platform_data;
+	struct dev_archdata	*archdata;
+	struct device_node *of_node;
+	struct fwnode_handle *fwnode;
+	int		irq;
+};
+```
+具体字段解释参见4，其中type字段会被填充为name。
+
+6. i2c_msg: an I2C transaction segment beginning with START(带start信号的i2c消息).
+```c
+struct i2c_msg {
+	__u16 addr;	/* slave address			*/
+	__u16 flags;
+#define I2C_M_RD		0x0001	/* read data, from slave to master */
+					/* I2C_M_RD is guaranteed to be 0x0001! */
+#define I2C_M_TEN		0x0010	/* this is a ten bit chip address */
+#define I2C_M_RECV_LEN		0x0400	/* length will be first received byte */
+#define I2C_M_NO_RD_ACK		0x0800	/* if I2C_FUNC_PROTOCOL_MANGLING */
+#define I2C_M_IGNORE_NAK	0x1000	/* if I2C_FUNC_PROTOCOL_MANGLING */
+#define I2C_M_REV_DIR_ADDR	0x2000	/* if I2C_FUNC_PROTOCOL_MANGLING */
+#define I2C_M_NOSTART		0x4000	/* if I2C_FUNC_NOSTART */
+#define I2C_M_STOP		0x8000	/* if I2C_FUNC_PROTOCOL_MANGLING */
+	__u16 len;		/* msg length				*/
+	__u8 *buf;		/* pointer to msg data			*/
+};
+```
+
+该结构的定义在`include/uapi/linux/i2c.h`，uapi说明在用户态也可以使用该结构体。
+
+addr字段：表示slave device的地址，一般赋值为client->addr。
+
+flags字段：读写等标志，在该结构体内的宏定义内选取，在master向slave发送消息时该字段设为client->flags & I2C_M_TEN；在master接收slave的消息时，该字段设置为flags |= I2C_M_RD。
+
+len字段：表示msg的长度。
+
+buf字段：代表msg的存储地址。
+
+i2c_msg结构体可以有多个，以数组的形式组织在一起。
+
+具体参考：drivers/i2c/i2c-core.c/i2c_master_send()和i2c_master_recv()的实现。
+
+7. i2c msg的传输：主要有三个接口，分别是`int i2c_transfer(struct i2c_adapter *adap, struct i2c_msg *msgs, int num)`/`int i2c_master_send(const struct i2c_client *client, const char *buf, int count)`/`int i2c_master_recv(const struct i2c_client *client, char *buf, int count)`；其实i2c_master_send()和i2c_master_recv()都是调用的i2c_transfer()，而i2c_transfer()调用的adap->algo->master_xfer()接口，也就是struct i2c_algorithm的master_xfer字段。注意i2c_transfer()函数会睡眠，所以不能在中断上下文使用该接口。
+
+C. i2c slave device驱动编写：首先查看i2c设备的datasheet，确认i2c设备的地址，在target board的dts文件内添加i2c设备节点，之后编写驱动文件主要完成i2c_driver的初始化和注册，硬件的初始化，消息的收发等；i2c_driver和platform_driver是平等的"地位"，都是以bus_driver的形式命名。简单的注册接口`module_i2c_driver()`。
+
+注意：如果使用设备树来构建一个i2c_client的话，**即使使用设备树来匹配，也要对i2c_driver中的id_table字段进行有效的赋值，否则probe不会被回调!!!** 如果你也遇到了这个问题, 可以试试在驱动中定义一个空数组, 将其赋值给id_table；网友说的，自己未测试，不确定是否属实，不过给id_table赋值也不费劲，完全可以顺手完成。
+
+常用接口：i2c_add_driver()/i2c_del_driver()/i2c_set_clientdata()/i2c_get_clientdata()/module_i2c_driver();多读include/linux/i2c.h。
+
+D. i2c master device驱动编写：核心的数据结构有struct i2c_adapter和struct i2c_algorithm;一般i2c_adapter当作platform_driver注册到内核当中。
+
+编写adapter驱动的框架思路：先在arch/arm/boot/dts/下找到芯片相关的设备树文件(如am33xx.dtsi)内添加adapter对应的物理设备信息，如irq，memory等；或者在arch/arm/mach-xxx/下找到相关的板级文件(board-xxx.c)，在合适的位置添加platform_device信息；之后在driver/i2c/busses/下以i2c-xxx.c的格式新建一个.c文件，在该文件内完成platform_driver的注册、i2c_adapter的初始化和注册、i2c_algorithm的初始化。
+
+说的比较简单，涉及到具体细节的要多看看内核的代码实现。
