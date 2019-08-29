@@ -243,7 +243,7 @@ struct i2c_msg {
 
 addr字段：表示slave device的地址，一般赋值为client->addr。
 
-flags字段：读写等标志，在该结构体内的宏定义内选取，在master向slave发送消息时该字段设为client->flags & I2C_M_TEN；在master接收slave的消息时，该字段设置为flags |= I2C_M_RD。
+flags字段：读写等标志，在该结构体内的宏定义内选取，在master向slave发送消息时该字段设为client->flags & I2C_M_TEN；在master接收slave的消息时，该字段设置为flags /|= I2C_M_RD。
 
 len字段：表示msg的长度。
 
